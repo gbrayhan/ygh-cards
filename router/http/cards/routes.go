@@ -16,14 +16,14 @@ func NewRoutesFactory(group *gin.RouterGroup) func(service card.CardService) {
     group.GET("/", func(c *gin.Context) {
       results, err := service.ListCards()
       if err != nil {
-        c.Error(err)
+        _ = c.Error(err)
         return
       }
 
       var responseItems = make([]CardResponse, len(results))
 
-      for i, element := range results {
-        responseItems[i] = *toResponseModel(&element)
+      for i := range results {
+        responseItems[i] = *toResponseModel(&results[i])
       }
 
       response := &ListResponse{
@@ -54,10 +54,16 @@ func NewRoutesFactory(group *gin.RouterGroup) func(service card.CardService) {
 
     group.GET("/:cardId", func(c *gin.Context) {
       id := c.Param("cardId")
-      i, err := strconv.Atoi(id)
+      var i, err = strconv.Atoi(id)
+      if err != nil {
+        err = domainErrors.NewAppErrorWithType(domainErrors.ValidationError)
+        _ = c.Error(err)
+        return
+      }
+
       result, err := service.ReadCard(i)
       if err != nil {
-        c.Error(err)
+        _ = c.Error(err)
         return
       }
 

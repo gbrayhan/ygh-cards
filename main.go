@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-
   cardsRepo := cardsStore.New()
   cardsSvc := card.NewService(cardsRepo)
   // router.ApplicationV1Router(router)
@@ -26,5 +25,4 @@ func main() {
   if err != nil {
     panic(err)
   }
-
 }

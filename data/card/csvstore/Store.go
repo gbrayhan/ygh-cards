@@ -31,15 +31,13 @@ func (s *Store) CreateCard(cardDom *domainCard.Card) (card *domainCard.Card, err
 }
 
 func (s *Store) ReadCard(id int) (card *domainCard.Card, err error) {
-
   dCard, err := s.csv.FindCardByID(id)
-
   if err != nil {
     err = domainErrors.NewAppError(errors.Wrap(err, readError), domainErrors.RepositoryError)
     return
   }
 
-  if dCard.Name == "" {
+  if dCard.ID == 0 {
     err = domainErrors.NewAppErrorWithType(domainErrors.NotFound)
     return
   }
@@ -59,8 +57,8 @@ func (s *Store) ListCards() (cards []domainCard.Card, err error) {
 
   cards = make([]domainCard.Card, len(results))
 
-  for i, element := range results {
-    cards[i] = *dataCard.ToDomainModel(&element)
+  for i := range results {
+    cards[i] = *dataCard.ToDomainModel(&results[i])
   }
 
   return

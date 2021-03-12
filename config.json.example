@@ -22,8 +22,19 @@
   },
   "Databases": {
     "CSV": {
-      "CardsYGOFile": "./archives/ygh_card_data.csv"
-
+      "CardsYGO": {
+        "File": "./archives/ygh_card_data.csv",
+        "Structure": {
+          "ID":0,
+          "Name": 1,
+          "Type": 2,
+          "Level": 3,
+          "Race": 4,
+          "Attribute": 5,
+          "ATK": 6,
+          "DEF": 7
+        }
+      }
     },
     "MongoDB": {
       "URL": "mongodb://user:pass@host:27017",
