@@ -14,7 +14,7 @@ import (
 )
 
 // NewHTTPHandler returns the HTTP requests handler
-func NewHTTPHandler(cardSvc card.CardService) http.Handler {
+func NewHTTPHandler(card card.CardService, cardAPIDeck card.CardService) http.Handler {
   router := gin.Default()
 
   config := cors.DefaultConfig()
@@ -30,7 +30,8 @@ func NewHTTPHandler(cardSvc card.CardService) http.Handler {
   api := router.Group("/api")
 
   cardsGroup := api.Group("/cards")
-  cardsRoutes.NewRoutesFactory(cardsGroup)(cardSvc)
+  cardsRoutes.NewRoutesFactory(cardsGroup)(card, cardAPIDeck)
+
   // booksRoutes.NewRoutesFactory(cardsGroup)(booksSvc)
   return router
 }

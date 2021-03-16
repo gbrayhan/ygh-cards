@@ -10,6 +10,7 @@ type CardResponse struct {
   Attribute string `json:"attribute"`
   ATK       int    `json:"atk"`
   DEF       int    `json:"def"`
+  Img       string `json:"img,omitempty"`
 }
 
 // ListResponse struct defines cards list response structure

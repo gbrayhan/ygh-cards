@@ -11,8 +11,8 @@ import (
 )
 
 // NewRoutesFactory create and returns a factory to create routes for the card
-func NewRoutesFactory(group *gin.RouterGroup) func(service card.CardService) {
-  cardRoutesFactory := func(service card.CardService) {
+func NewRoutesFactory(group *gin.RouterGroup) func(service card.CardService, externalService card.CardService) {
+  cardRoutesFactory := func(service card.CardService, externalService card.CardService) {
     group.GET("/", func(c *gin.Context) {
       results, err := service.ListCards()
       if err != nil {
@@ -50,9 +50,7 @@ func NewRoutesFactory(group *gin.RouterGroup) func(service card.CardService) {
       c.JSON(http.StatusCreated, *toResponseModel(newCard))
     })
 
-
-
-    group.GET("/:cardId", func(c *gin.Context) {
+    group.GET("/id/:cardId", func(c *gin.Context) {
       id := c.Param("cardId")
       var i, err = strconv.Atoi(id)
       if err != nil {
@@ -69,6 +67,48 @@ func NewRoutesFactory(group *gin.RouterGroup) func(service card.CardService) {
 
       c.JSON(http.StatusOK, *toResponseModel(result))
     })
+
+    group.GET("/random", func(c *gin.Context) {
+      result, err := service.RandomCard()
+      if err != nil {
+        _ = c.Error(err)
+        return
+      }
+
+      c.JSON(http.StatusOK, *toResponseModel(result))
+    })
+    external := group.Group("/external")
+    {
+      external.GET("/random", func(c *gin.Context) {
+        result, err := externalService.RandomCard()
+        if err != nil {
+          _ = c.Error(err)
+          return
+        }
+        c.JSON(http.StatusOK, *toResponseModel(result))
+      })
+
+      external.GET("/", func(c *gin.Context) {
+        results, err := externalService.ListCards()
+        if err != nil {
+          _ = c.Error(err)
+          return
+        }
+
+        var responseItems = make([]CardResponse, len(results))
+
+        for i := range results {
+          responseItems[i] = *toResponseModel(&results[i])
+        }
+
+        response := &ListResponse{
+          Data: responseItems,
+        }
+
+        c.JSON(http.StatusOK, response)
+      })
+
+    }
   }
 
   return cardRoutesFactory

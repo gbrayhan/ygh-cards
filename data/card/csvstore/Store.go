@@ -25,9 +25,17 @@ func New() *Store {
   }
 }
 
+//
 func (s *Store) CreateCard(cardDom *domainCard.Card) (card *domainCard.Card, err error) {
+ //cardData := dataCard.ToDataModel(cardDom)
+ //dataKeys, _ = s.csv.mapKeysExistData()
+ //
+ //
+ //
 
-  return
+
+
+ return
 }
 
 func (s *Store) ReadCard(id int) (card *domainCard.Card, err error) {
@@ -61,5 +69,21 @@ func (s *Store) ListCards() (cards []domainCard.Card, err error) {
     cards[i] = *dataCard.ToDomainModel(&results[i])
   }
 
+  return
+}
+
+func (s *Store) RandomCard() (card *domainCard.Card, err error) {
+  dCard, err := s.csv.RandCard()
+  if err != nil {
+    err = domainErrors.NewAppError(errors.Wrap(err, readError), domainErrors.RepositoryError)
+    return
+  }
+
+  if dCard.ID == 0 {
+    err = domainErrors.NewAppErrorWithType(domainErrors.NotFound)
+    return
+  }
+
+  card = dataCard.ToDomainModel(&dCard)
   return
 }

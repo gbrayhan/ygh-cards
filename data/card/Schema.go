@@ -10,4 +10,5 @@ type Card struct {
   Attribute string
   ATK       int
   DEF       int
+  Img       string
 }

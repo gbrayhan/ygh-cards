@@ -2,8 +2,10 @@ package csvstore
 
 import (
   "io/ioutil"
+  "math/rand"
   "strconv"
   "strings"
+  "time"
 
   "github.com/mitchellh/mapstructure"
   "github.com/spf13/viper"
@@ -11,12 +13,14 @@ import (
   dataCard "github.com/gbrayhan/academy-go-q12021/data/card"
 )
 
-// FileCSV
+var fileCSV FileCSV
 type FileCSV struct {
-  Error error
+  Name      string
+  Error     error
+  Structure StructureCSVFile
 }
 
-type StructureCSV struct {
+type StructureCSVFile struct {
   ID        int `json:"ID"`
   Name      int `json:"Name"`
   Type      int `json:"Type"`
@@ -27,23 +31,24 @@ type StructureCSV struct {
   DEF       int `json:"DEF"`
 }
 
-func (FileCSV) mapCSVFile() (data map[int]dataCard.Card, err error) {
-  var structureCSVCards StructureCSV
-  err = mapstructure.Decode(viper.GetStringMap("Databases.CSV.CardsYGO.Structure"), &structureCSVCards)
-  if err != nil {
-    return
-  }
-
-  data = make(map[int]dataCard.Card)
-
+func init() {
   viper.SetConfigFile("config.json")
-  err = viper.ReadInConfig()
+  err := viper.ReadInConfig()
   if err != nil {
     return
   }
 
-  fileName := viper.GetString("Databases.CSV.CardsYGO.File")
-  contentBytes, err := ioutil.ReadFile(fileName)
+  err = mapstructure.Decode(viper.GetStringMap("Databases.CSV.CardsYGO.Structure"), &fileCSV.Structure)
+  if err != nil {
+    return
+  }
+
+  fileCSV.Name = viper.GetString("Databases.CSV.CardsYGO.File")
+}
+
+func (f *FileCSV) mapCSVFile() (data map[int]dataCard.Card, err error) {
+  data = make(map[int]dataCard.Card)
+  contentBytes, err := ioutil.ReadFile(f.Name)
   if err != nil {
     return
   }
@@ -55,21 +60,21 @@ func (FileCSV) mapCSVFile() (data map[int]dataCard.Card, err error) {
     }
 
     if len(row) != 0 {
-      var key, errConv = strconv.Atoi(row[structureCSVCards.ID])
+      var key, errConv = strconv.Atoi(row[f.Structure.ID])
       if errConv != nil {
         continue
       }
-      level, _ := strconv.Atoi(row[structureCSVCards.Level])
-      atk, _ := strconv.Atoi(row[structureCSVCards.ATK])
-      def, _ := strconv.Atoi(row[structureCSVCards.DEF])
+      level, _ := strconv.Atoi(row[f.Structure.Level])
+      atk, _ := strconv.Atoi(row[f.Structure.ATK])
+      def, _ := strconv.Atoi(row[f.Structure.DEF])
 
       data[key] = dataCard.Card{
         ID:        key,
-        Name:      row[structureCSVCards.Name],
-        Type:      row[structureCSVCards.Type],
+        Name:      row[f.Structure.Name],
+        Type:      row[f.Structure.Type],
         Level:     level,
-        Race:      row[structureCSVCards.Race],
-        Attribute: row[structureCSVCards.Attribute],
+        Race:      row[f.Structure.Race],
+        Attribute: row[f.Structure.Attribute],
         ATK:       atk,
         DEF:       def}
     }
@@ -77,8 +82,44 @@ func (FileCSV) mapCSVFile() (data map[int]dataCard.Card, err error) {
   return
 }
 
+func (f *FileCSV) mapKeysExistData() (data map[string]map[string]bool, err error) {
+  data = make(map[string]map[string]bool)
+  contentBytes, err := ioutil.ReadFile(fileCSV.Name)
+  if err != nil {
+    return
+  }
+
+  for _, line := range strings.Split(string(contentBytes), "\n") {
+    var row []string
+    if line != "" {
+      row = strings.Split(line, ",")
+    }
+
+    if len(row) != 0 {
+      data["id"][row[fileCSV.Structure.ID]] = true
+      data["name"][strings.ToLower(strings.ReplaceAll(row[fileCSV.Structure.Name], " ", ""))] = true
+    }
+
+  }
+
+  return
+}
+
+func (f *FileCSV) isDuplicate(card dataCard.Card) (isduplicate bool, err error) {
+  dataKeys, _ := f.mapKeysExistData()
+  if dataKeys["name"][strings.ToLower(strings.ReplaceAll(card.Name, " ", ""))] {
+    isduplicate = true
+    return
+  }
+  return
+}
+func (f *FileCSV) SaveCard() (err error) {
+  return
+}
+
+// FindCardByID
 func (f *FileCSV) FindCardByID(id int) (card dataCard.Card, err error) {
-  dataMap, err := f.mapCSVFile()
+  dataMap, err := fileCSV.mapCSVFile()
   if err != nil {
     return
   }
@@ -87,13 +128,27 @@ func (f *FileCSV) FindCardByID(id int) (card dataCard.Card, err error) {
 }
 
 func (f *FileCSV) FindAllCards(cards *[]dataCard.Card, ) (err error) {
-  dataMap, err := f.mapCSVFile()
+  dataMap, err := fileCSV.mapCSVFile()
   if err != nil {
     return
   }
 
   for _, card := range dataMap {
     *cards = append(*cards, card)
+  }
+
+  return
+}
+
+func (f *FileCSV) RandCard() (card dataCard.Card, err error) {
+  dataMap, err := fileCSV.mapCSVFile()
+  if err != nil {
+    return
+  }
+
+  rand.Seed(time.Now().UnixNano())
+  if _, ok := dataMap[rand.Intn(len(dataMap))]; ok {
+    card = dataMap[rand.Intn(len(dataMap))]
   }
 
   return

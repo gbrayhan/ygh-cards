@@ -14,5 +14,6 @@ func toResponseModel(entity *domain.Card) *CardResponse {
     Attribute: entity.Attribute,
     ATK:       entity.ATK,
     DEF:       entity.DEF,
+    Img:       entity.Img,
   }
 }

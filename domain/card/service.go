@@ -5,6 +5,7 @@ type CardService interface {
   CreateCard(*Card) (*Card, error)
   ReadCard(id int) (*Card, error)
   ListCards() ([]Card, error)
+  RandomCard() (*Card, error)
 }
 
 // Service struct handles card business logic tasks.
@@ -22,6 +23,10 @@ func (svc *Service) ReadCard(id int) (*Card, error) {
 
 func (svc *Service) ListCards() ([]Card, error) {
   return svc.repository.ListCards()
+}
+
+func (svc *Service) RandomCard() (*Card, error) {
+  return svc.repository.RandomCard()
 }
 
 // NewService creates a new service struct
