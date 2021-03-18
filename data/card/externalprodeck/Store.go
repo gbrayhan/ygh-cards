@@ -16,7 +16,7 @@ const (
 // Store struct manages interactions with cards store
 type Store struct {
   api       ApiProDec
-  cardsRepo domainCard.CardRepository
+  cardsRepo domainCard.Repository
 }
 
 func (s *Store) CreateCard(card *domainCard.Card) (*domainCard.Card, error) {

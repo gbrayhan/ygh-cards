@@ -17,7 +17,7 @@ const (
 // Store struct manages interactions with cards store
 type Store struct {
   csv       FileCSV
-  cardsRepo domainCard.CardRepository
+  cardsRepo domainCard.Repository
 }
 
 func New() *Store {
@@ -27,15 +27,9 @@ func New() *Store {
 
 //
 func (s *Store) CreateCard(cardDom *domainCard.Card) (card *domainCard.Card, err error) {
- //cardData := dataCard.ToDataModel(cardDom)
- //dataKeys, _ = s.csv.mapKeysExistData()
- //
- //
- //
 
 
-
- return
+  return
 }
 
 func (s *Store) ReadCard(id int) (card *domainCard.Card, err error) {

@@ -43,21 +43,27 @@ type CardProDeckApi struct {
   } `json:"card_prices,omitempty"`
 }
 
+var apiPro ApiProDec
+
 // FileCSV
 type ApiProDec struct {
   Url   string
   Error error
 }
 
-func RandApiCard() (apiCard CardProDeckApi, err error) {
+func init() {
   viper.SetConfigFile("config.json")
-  err = viper.ReadInConfig()
+  err := viper.ReadInConfig()
   if err != nil {
+    panic(err.Error)
     return
   }
 
-  apiUrl := viper.GetString("Endpoints.YGOProDeck")
-  request, err := http.NewRequest("GET", fmt.Sprintf("%s/randomcard.php", apiUrl), nil)
+  apiPro.Url = viper.GetString("Endpoints.YGOProDeck")
+}
+
+func RandApiCard() (apiCard CardProDeckApi, err error) {
+  request, err := http.NewRequest("GET", fmt.Sprintf("%s/randomcard.php", apiPro.Url), nil)
   if err != nil {
     return
   }

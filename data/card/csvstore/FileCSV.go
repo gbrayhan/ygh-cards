@@ -1,6 +1,7 @@
 package csvstore
 
 import (
+  "errors"
   "io/ioutil"
   "math/rand"
   "strconv"
@@ -13,7 +14,12 @@ import (
   dataCard "github.com/gbrayhan/academy-go-q12021/data/card"
 )
 
+// Exportable errors
+var ErrAlreadyExists = errors.New("element already exists")
+var ErrNotFound = errors.New("element not found")
+
 var fileCSV FileCSV
+
 type FileCSV struct {
   Name      string
   Error     error
@@ -99,21 +105,36 @@ func (f *FileCSV) mapKeysExistData() (data map[string]map[string]bool, err error
       data["id"][row[fileCSV.Structure.ID]] = true
       data["name"][strings.ToLower(strings.ReplaceAll(row[fileCSV.Structure.Name], " ", ""))] = true
     }
-
   }
 
   return
 }
 
-func (f *FileCSV) isDuplicate(card dataCard.Card) (isduplicate bool, err error) {
+func (f *FileCSV) isDuplicate(card dataCard.Card) (isDuplicate bool, err error) {
   dataKeys, _ := f.mapKeysExistData()
   if dataKeys["name"][strings.ToLower(strings.ReplaceAll(card.Name, " ", ""))] {
-    isduplicate = true
+    isDuplicate = true
     return
   }
   return
 }
-func (f *FileCSV) SaveCard() (err error) {
+
+func (f *FileCSV) SaveCard(card dataCard.Card) (err error) {
+  isDuplicate, err := fileCSV.isDuplicate(card)
+  if err != nil {
+    return
+  }
+  if isDuplicate {
+    err = ErrAlreadyExists
+    return
+  }
+
+
+
+
+
+
+
   return
 }
 
@@ -123,6 +144,12 @@ func (f *FileCSV) FindCardByID(id int) (card dataCard.Card, err error) {
   if err != nil {
     return
   }
+
+  if _, ok := dataMap[id]; !ok {
+    err = ErrNotFound
+    return
+  }
+
   card = dataMap[id]
   return
 }

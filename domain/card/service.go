@@ -10,7 +10,7 @@ type CardService interface {
 
 // Service struct handles card business logic tasks.
 type Service struct {
-  repository CardRepository
+  repository Repository
 }
 
 func (svc *Service) CreateCard(card *Card) (*Card, error) {
@@ -30,6 +30,6 @@ func (svc *Service) RandomCard() (*Card, error) {
 }
 
 // NewService creates a new service struct
-func NewService(repository CardRepository) *Service {
+func NewService(repository Repository) *Service {
   return &Service{repository: repository}
 }
