@@ -1,9 +1,12 @@
 package csvstore
 
 import (
+  "bufio"
   "errors"
+  "fmt"
   "io/ioutil"
   "math/rand"
+  "os"
   "strconv"
   "strings"
   "time"
@@ -15,6 +18,7 @@ import (
 // Exportable errors
 var ErrAlreadyExists = errors.New("element already exists")
 var ErrNotFound = errors.New("element not found")
+var LastIdError = errors.New("last id error")
 
 var fileCSV FileCSV
 
@@ -52,18 +56,65 @@ func init() {
   fileCSV.Name = viper.GetString("Databases.CSV.CardsYGO.File")
 }
 
+func (f *FileCSV) nextLastID() (nextLastID int, err error) {
+
+  file, err := os.Open(fileCSV.Name)
+  if err != nil {
+    return
+  }
+  defer file.Close()
+
+  buf := make([]byte, 62)
+  stat, err := os.Stat(fileCSV.Name)
+  if err != nil {
+    return
+  }
+  start := stat.Size() - 62
+  _, err = file.ReadAt(buf, start)
+  if err != nil {
+    return
+  }
+  lastLine := fmt.Sprintf("%s\n", buf)
+
+  row := strings.Split(lastLine, ",")
+  lastID, err := strconv.Atoi(strings.TrimSpace(row[fileCSV.Structure.ID]))
+
+  if err != nil {
+    return
+  }
+
+  nextLastID = lastID + 1
+  err = f.mapKeysExistData()
+  if err != nil {
+    return
+  }
+
+  for i := 0; i <= 1000; i++ {
+    if !f.MapKeysData["id"][string(rune(nextLastID))] {
+      return
+    }
+    nextLastID++
+  }
+  err = LastIdError
+  return
+}
+
 func (f *FileCSV) mapCSVFile() (err error) {
   if f.MapCSVData != nil {
     return
   }
 
   f.MapCSVData = make(map[int]Card)
-  contentBytes, err := ioutil.ReadFile(fileCSV.Name)
+
+  file, err := os.Open(fileCSV.Name)
   if err != nil {
     return
   }
+  defer file.Close()
+  scanner := bufio.NewScanner(file)
 
-  for _, line := range strings.Split(string(contentBytes), "\n") {
+  for scanner.Scan() {
+    line := scanner.Text()
     var row []string
     if line != "" {
       row = strings.Split(line, ",")
@@ -77,7 +128,6 @@ func (f *FileCSV) mapCSVFile() (err error) {
       level, _ := strconv.Atoi(row[fileCSV.Structure.Level])
       atk, _ := strconv.Atoi(row[fileCSV.Structure.ATK])
       def, _ := strconv.Atoi(row[fileCSV.Structure.DEF])
-
       f.MapCSVData[key] = Card{
         ID:        key,
         Name:      row[fileCSV.Structure.Name],
@@ -88,11 +138,21 @@ func (f *FileCSV) mapCSVFile() (err error) {
         ATK:       atk,
         DEF:       def}
     }
+
   }
+
+  if err = scanner.Err(); err != nil {
+    return err
+  }
+
   return
 }
 
 func (f *FileCSV) mapKeysExistData() (err error) {
+  if f.MapKeysData != nil {
+    return
+  }
+
   f.MapKeysData = make(map[string]map[string]bool)
   contentBytes, err := ioutil.ReadFile(fileCSV.Name)
   if err != nil {
@@ -136,6 +196,7 @@ func (f *FileCSV) isDuplicate(card *Card) (isDuplicate bool, err error) {
   return
 }
 
+
 func (f *FileCSV) SaveCard(card *Card) (err error) {
   isDuplicate, err := f.isDuplicate(card)
   if err != nil {
@@ -145,6 +206,19 @@ func (f *FileCSV) SaveCard(card *Card) (err error) {
     err = ErrAlreadyExists
     return
   }
+  card.ID, err = f.nextLastID()
+
+  // Id,Name,Type,Level,Race,Attribute,ATK,DEF
+  line := fmt.Sprintf("%d,%s,%s,%d,%s,%s,%d,%d", card.ID, card.Name, card.Type, card.Level, card.Race, card.Attribute, card.ATK, card.DEF)
+
+  file, err := os.OpenFile(fileCSV.Name,
+    os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+  if err != nil {
+    return
+  }
+
+  defer file.Close()
+  _, err = file.WriteString(fmt.Sprintf("\n%s", line))
 
   return
 }

@@ -6533,3 +6533,5 @@ Id,Name,Type,Level,Race,Attribute,ATK,DEF
 6532,Dark Magician,Normal Monster,7,Spellcaster,DARK,2500,2100
 6533,Odd-Eyes Pendulum Dragon,Pendulum Effect Monster,7,Dragon,DARK,2500,2000
 6534,Stardust Dragon,Synchro Monster,8,Dragon,WIND,2500,2000
+6535,Cross-Sword Beetlee,Effect Monster,4,Insect,WIND,1800,0
+6536,Cross-Sword Beetleo,Effect Monster,4,Insect,WIND,1800,0
