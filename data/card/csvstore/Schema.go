@@ -1,4 +1,4 @@
-package card
+package csvstore
 
 // Card struct defines the database model for a card.
 type Card struct {

@@ -19,37 +19,6 @@ type FileCSV struct {
   Error error
 }
 
-type CardProDeckCsv struct {
-  ID        int    `json:"id"`
-  Name      string `json:"name"`
-  Type      string `json:"type"`
-  Desc      string `json:"desc"`
-  Atk       int    `json:"atk"`
-  Def       int    `json:"def"`
-  Level     int    `json:"level"`
-  Race      string `json:"race"`
-  Attribute string `json:"attribute"`
-  Archetype string `json:"archetype"`
-  CardSets  []struct {
-    SetName       string `json:"set_name"`
-    SetCode       string `json:"set_code"`
-    SetRarity     string `json:"set_rarity"`
-    SetRarityCode string `json:"set_rarity_code"`
-    SetPrice      string `json:"set_price"`
-  } `json:"card_sets"`
-  CardImages []struct {
-    ID            int    `json:"id"`
-    ImageURL      string `json:"image_url"`
-    ImageURLSmall string `json:"image_url_small"`
-  } `json:"card_images"`
-  CardPrices []struct {
-    CardmarketPrice   string `json:"cardmarket_price"`
-    TcgplayerPrice    string `json:"tcgplayer_price"`
-    EbayPrice         string `json:"ebay_price"`
-    AmazonPrice       string `json:"amazon_price"`
-    CoolstuffincPrice string `json:"coolstuffinc_price"`
-  } `json:"card_prices"`
-}
 
 type StructureCSVFile struct {
   ID          int `json:"ID"`
@@ -67,7 +36,8 @@ type StructureCSVFile struct {
   CardPrices  int `json:"card_prices"`
 }
 
-func mapCSVFile() (data map[int]CardProDeckCsv, err error) {
+// MapCSVFile
+func MapCSVFile() (data map[int]Card, err error) {
   var structureCSVCards StructureCSVFile
   viper.SetConfigFile("config.json")
   err = viper.ReadInConfig()
@@ -80,7 +50,7 @@ func mapCSVFile() (data map[int]CardProDeckCsv, err error) {
     return
   }
 
-  data = make(map[int]CardProDeckCsv)
+  data = make(map[int]Card)
   fileName := viper.GetString("Databases.CSV.ProDeckYGO.File")
   contentBytes, err := ioutil.ReadFile(fileName)
   if err != nil {
@@ -98,7 +68,7 @@ func mapCSVFile() (data map[int]CardProDeckCsv, err error) {
       if errConv != nil {
         continue
       }
-      var currentCard CardProDeckCsv
+      var currentCard Card
 
       descDec, _ := b64.StdEncoding.DecodeString(row[structureCSVCards.Description])
       level, _ := strconv.Atoi(row[structureCSVCards.Level])
@@ -108,7 +78,7 @@ func mapCSVFile() (data map[int]CardProDeckCsv, err error) {
       cardSetsDec, _ := b64.StdEncoding.DecodeString(row[structureCSVCards.CardSets])
       cardImagesDec, _ := b64.StdEncoding.DecodeString(row[structureCSVCards.CardImages])
 
-      currentCard = CardProDeckCsv{
+      currentCard = Card{
         ID:        key,
         Name:      row[structureCSVCards.Name],
         Type:      row[structureCSVCards.Type],
@@ -142,8 +112,8 @@ func mapKeysCSV() (data map[string]map[string]bool, err error) {
 }
 
 //GetAllCards
-func GetAllCards() (cards []CardProDeckCsv, err error) {
-  mapData, err := mapCSVFile()
+func GetAllCards() (cards []Card, err error) {
+  mapData, err := MapCSVFile()
   if err != nil {
     return
   }
@@ -154,14 +124,14 @@ func GetAllCards() (cards []CardProDeckCsv, err error) {
 }
 
 // Save
-func (card *CardProDeckCsv) Save() (err error) {
+func (card *Card) Save() (err error) {
   viper.SetConfigFile("config.json")
   err = viper.ReadInConfig()
   if err != nil {
     return
   }
 
-  dataMap, err := mapCSVFile()
+  dataMap, err := MapCSVFile()
   if err != nil {
     return
   }

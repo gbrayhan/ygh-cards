@@ -51,7 +51,6 @@ func (s *Store) ListCards() (cards []domainCard.Card, err error) {
       DEF:       c.Def,
       Img:       image}
     cards = append(cards, cardDomain)
-
   }
 
   return
@@ -74,15 +73,7 @@ func (s *Store) RandomCard() (card *domainCard.Card, err error) {
     return
   }
 
-  card = &domainCard.Card{
-    ID:        apiCard.ID,
-    Name:      apiCard.Name,
-    Type:      apiCard.Type,
-    Level:     apiCard.Level,
-    Race:      apiCard.Race,
-    Attribute: apiCard.Attribute,
-    ATK:       apiCard.Atk,
-    DEF:       apiCard.Def}
+  card = toDomainModel(&apiCard)
 
   return
 }

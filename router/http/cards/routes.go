@@ -34,14 +34,26 @@ func NewRoutesFactory(group *gin.RouterGroup) func(service card.CardService, ext
     })
 
     group.POST("/", func(c *gin.Context) {
-      card, err := Bind(c)
+      var cardReq SaveCardValidator
+      err := c.BindJSON(&cardReq)
+
       if err != nil {
         appError := domainErrors.NewAppError(err, domainErrors.ValidationError)
-        c.Error(appError)
+        _ = c.Error(appError)
         return
       }
 
-      newCard, err := service.CreateCard(card)
+      cardDom := &card.Card{
+        Name:      cardReq.Name,
+        Type:      cardReq.Type,
+        Level:     cardReq.Level,
+        Race:      cardReq.Race,
+        Attribute: cardReq.Attribute,
+        ATK:       cardReq.Atk,
+        DEF:       cardReq.Def,
+      }
+
+      newCard, err := service.CreateCard(cardDom)
       if err != nil {
         _ = c.Error(err)
         return
