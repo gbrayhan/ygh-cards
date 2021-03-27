@@ -39,7 +39,7 @@ type StructureCSVFile struct {
 // MapCSVFile
 func MapCSVFile() (data map[int]Card, err error) {
   var structureCSVCards StructureCSVFile
-  viper.SetConfigFile("config.json")
+  viper.SetConfigFile(os.Getenv("APP_YGH_CONFIG_FILE"))
   err = viper.ReadInConfig()
   if err != nil {
     return
@@ -125,7 +125,7 @@ func GetAllCards() (cards []Card, err error) {
 
 // Save
 func (card *Card) Save() (err error) {
-  viper.SetConfigFile("config.json")
+  viper.SetConfigFile(os.Getenv("APP_YGH_CONFIG_FILE"))
   err = viper.ReadInConfig()
   if err != nil {
     return

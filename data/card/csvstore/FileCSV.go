@@ -42,7 +42,7 @@ type StructureCSVFile struct {
 }
 
 func init() {
-  viper.SetConfigFile("config.json")
+  viper.SetConfigFile(os.Getenv("APP_YGH_CONFIG_FILE"))
   err := viper.ReadInConfig()
   if err != nil {
     return
@@ -75,6 +75,7 @@ func (f *FileCSV) nextLastID() (nextLastID int, err error) {
     return
   }
   lastLine := fmt.Sprintf("%s\n", buf)
+  lastLine = strings.Trim(lastLine, "\r\n")
 
   row := strings.Split(lastLine, ",")
   lastID, err := strconv.Atoi(strings.TrimSpace(row[fileCSV.Structure.ID]))
@@ -195,7 +196,6 @@ func (f *FileCSV) isDuplicate(card *Card) (isDuplicate bool, err error) {
   }
   return
 }
-
 
 func (f *FileCSV) SaveCard(card *Card) (err error) {
   isDuplicate, err := f.isDuplicate(card)

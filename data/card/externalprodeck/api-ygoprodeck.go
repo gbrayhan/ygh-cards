@@ -21,7 +21,7 @@ type ApiProDec struct {
 }
 
 func init() {
-  viper.SetConfigFile("config.json")
+  viper.SetConfigFile(os.Getenv("APP_YGH_CONFIG_FILE"))
   err := viper.ReadInConfig()
   if err != nil {
     panic(err.Error)
@@ -66,7 +66,7 @@ func RandApiCard() (apiCard Card, err error) {
 
 // AllAPICards
 func AllAPICards() (apiCards []Card, err error) {
-  viper.SetConfigFile("config.json")
+  viper.SetConfigFile(os.Getenv("APP_YGH_CONFIG_FILE"))
   err = viper.ReadInConfig()
   if err != nil {
     return

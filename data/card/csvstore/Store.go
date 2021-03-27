@@ -29,7 +29,7 @@ func New() *Store {
 func (s *Store) CreateCard(cardDom *domainCard.Card) (card *domainCard.Card, err error) {
   cardData := ToDataModel(cardDom)
   err = s.csv.SaveCard(cardData)
-  if err == ErrAlreadyExists {
+  if errors.Is(err, ErrAlreadyExists) {
     err = domainErrors.NewAppErrorWithType(domainErrors.ResourceAlreadyExists)
   }
   card = ToDomainModel(cardData)
@@ -39,7 +39,7 @@ func (s *Store) CreateCard(cardDom *domainCard.Card) (card *domainCard.Card, err
 func (s *Store) ReadCard(id int) (card *domainCard.Card, err error) {
   dCard, err := s.csv.FindCardByID(id)
 
-  if err == ErrNotFound {
+  if errors.Is(err, ErrNotFound) {
     err = domainErrors.NewAppErrorWithType(domainErrors.NotFound)
     return
   }

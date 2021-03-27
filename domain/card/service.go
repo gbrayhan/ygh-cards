@@ -10,26 +10,26 @@ type CardService interface {
 
 // Service struct handles card business logic tasks.
 type Service struct {
-  repository Repository
+  Repository Repository
 }
 
 func (svc *Service) CreateCard(card *Card) (*Card, error) {
-  return svc.repository.CreateCard(card)
+  return svc.Repository.CreateCard(card)
 }
 
 func (svc *Service) ReadCard(id int) (*Card, error) {
-  return svc.repository.ReadCard(id)
+  return svc.Repository.ReadCard(id)
 }
 
 func (svc *Service) ListCards() ([]Card, error) {
-  return svc.repository.ListCards()
+  return svc.Repository.ListCards()
 }
 
 func (svc *Service) RandomCard() (*Card, error) {
-  return svc.repository.RandomCard()
+  return svc.Repository.RandomCard()
 }
 
 // NewService creates a new service struct
 func NewService(repository Repository) *Service {
-  return &Service{repository: repository}
+  return &Service{Repository: repository}
 }
