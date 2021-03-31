@@ -77,3 +77,7 @@ func (s *Store) RandomCard() (card *domainCard.Card, err error) {
 
   return
 }
+
+func (s *Store) ConcurrencyCards(typeQuery string, items int, workers int) (cards []domainCard.Card, err error) {
+  return
+}

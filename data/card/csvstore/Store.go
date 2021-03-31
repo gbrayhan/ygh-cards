@@ -86,3 +86,13 @@ func (s *Store) RandomCard() (card *domainCard.Card, err error) {
   card = ToDomainModel(&dCard)
   return
 }
+
+func (s *Store) ConcurrencyCards(typeQuery string, items int, workers int) (cards []domainCard.Card, err error) {
+  cardsSource, err := s.csv.concurrencyReadQuery(typeQuery, items, workers)
+  cards = make([]domainCard.Card, len(cardsSource))
+
+  for i := range cardsSource {
+    cards[i] = *ToDomainModel(&cardsSource[i])
+  }
+  return
+}

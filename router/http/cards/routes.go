@@ -1,8 +1,10 @@
 package cards
 
 import (
+  "errors"
   "net/http"
   "strconv"
+  "strings"
 
   "github.com/gin-gonic/gin"
 
@@ -15,6 +17,46 @@ func NewRoutesFactory(group *gin.RouterGroup) func(service card.CardService, ext
   cardRoutesFactory := func(service card.CardService, externalService card.CardService) {
     group.GET("/", func(c *gin.Context) {
       results, err := service.ListCards()
+      if err != nil {
+        _ = c.Error(err)
+        return
+      }
+
+      var responseItems = make([]CardResponse, len(results))
+
+      for i := range results {
+        responseItems[i] = *toResponseModel(&results[i])
+      }
+
+      response := &ListResponse{
+        Data: responseItems,
+      }
+
+      c.JSON(http.StatusOK, response)
+    })
+    group.GET("/concurrency", func(c *gin.Context) {
+      var messages []string
+      typeQuery := c.DefaultQuery("type", "")
+      if typeQuery == "" {
+        messages = append(messages, "param type is necessary")
+      }
+
+      items, err := strconv.Atoi(c.DefaultQuery("items", ""))
+      if err != nil {
+        messages = append(messages, "param items is necessary")
+      }
+      workers, err := strconv.Atoi(c.DefaultQuery("workers", ""))
+      if err != nil {
+        messages = append(messages, "param workers is necessary")
+      }
+
+      if messages != nil {
+        appError := domainErrors.NewAppError(errors.New(strings.Join(messages, ", ")), domainErrors.ValidationError)
+        c.Error(appError)
+        return
+      }
+
+      results, err := service.ConcurrencyCards(typeQuery, items, workers)
       if err != nil {
         _ = c.Error(err)
         return

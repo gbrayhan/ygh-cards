@@ -6,6 +6,7 @@ type CardService interface {
   ReadCard(id int) (*Card, error)
   ListCards() ([]Card, error)
   RandomCard() (*Card, error)
+  ConcurrencyCards(string, int, int) ([]Card, error)
 }
 
 // Service struct handles card business logic tasks.
@@ -27,6 +28,10 @@ func (svc *Service) ListCards() ([]Card, error) {
 
 func (svc *Service) RandomCard() (*Card, error) {
   return svc.Repository.RandomCard()
+}
+
+func (svc *Service) ConcurrencyCards(typeQuery string, items int, workers int) ([]Card, error) {
+  return svc.Repository.ConcurrencyCards(typeQuery, items, workers)
 }
 
 // NewService creates a new service struct

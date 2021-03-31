@@ -6,4 +6,5 @@ type Repository interface {
   ReadCard(int) (*Card, error)
   ListCards() ([]Card, error)
   RandomCard() (*Card, error)
+  ConcurrencyCards(string, int, int) ([]Card, error)
 }

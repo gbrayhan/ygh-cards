@@ -7,8 +7,10 @@ import (
   "io/ioutil"
   "math/rand"
   "os"
+  "runtime"
   "strconv"
   "strings"
+  "sync"
   "time"
 
   "github.com/mitchellh/mapstructure"
@@ -18,7 +20,9 @@ import (
 // Exportable errors
 var ErrAlreadyExists = errors.New("element already exists")
 var ErrNotFound = errors.New("element not found")
-var LastIdError = errors.New("last id error")
+var ErrLastIdFail = errors.New("last id error")
+var ErrMaxWorkers = errors.New("max workers error")
+var ErrLineNotValid = errors.New("line not valid error")
 
 var fileCSV FileCSV
 
@@ -96,7 +100,7 @@ func (f *FileCSV) nextLastID() (nextLastID int, err error) {
     }
     nextLastID++
   }
-  err = LastIdError
+  err = ErrLastIdFail
   return
 }
 
@@ -116,36 +120,18 @@ func (f *FileCSV) mapCSVFile() (err error) {
 
   for scanner.Scan() {
     line := scanner.Text()
-    var row []string
-    if line != "" {
-      row = strings.Split(line, ",")
+    //
+    newCard, errLine := f.CardFromLineCSV(line)
+    if errLine != nil {
+      continue
     }
 
-    if len(row) != 0 {
-      var key, errConv = strconv.Atoi(row[fileCSV.Structure.ID])
-      if errConv != nil {
-        continue
-      }
-      level, _ := strconv.Atoi(row[fileCSV.Structure.Level])
-      atk, _ := strconv.Atoi(row[fileCSV.Structure.ATK])
-      def, _ := strconv.Atoi(row[fileCSV.Structure.DEF])
-      f.MapCSVData[key] = Card{
-        ID:        key,
-        Name:      row[fileCSV.Structure.Name],
-        Type:      row[fileCSV.Structure.Type],
-        Level:     level,
-        Race:      row[fileCSV.Structure.Race],
-        Attribute: row[fileCSV.Structure.Attribute],
-        ATK:       atk,
-        DEF:       def}
-    }
-
+    f.MapCSVData[newCard.ID] = newCard
   }
 
   if err = scanner.Err(); err != nil {
     return err
   }
-
   return
 }
 
@@ -170,7 +156,6 @@ func (f *FileCSV) mapKeysExistData() (err error) {
     }
 
     if len(row) != 0 {
-
       var _, errConv = strconv.Atoi(row[fileCSV.Structure.ID])
       if errConv != nil {
         continue
@@ -238,6 +223,38 @@ func (f *FileCSV) FindCardByID(id int) (card Card, err error) {
   card = f.MapCSVData[id]
   return
 }
+func (f *FileCSV) CardFromLineCSV(line string) (card Card, err error) {
+  var row []string
+  if line != "" {
+    row = strings.Split(line, ",")
+  } else {
+    err = ErrLineNotValid
+    return
+  }
+
+  if len(row) != 0 {
+    var key, errConv = strconv.Atoi(row[fileCSV.Structure.ID])
+    if errConv != nil {
+      err = ErrLineNotValid
+      return
+    }
+    level, _ := strconv.Atoi(row[fileCSV.Structure.Level])
+    atk, _ := strconv.Atoi(row[fileCSV.Structure.ATK])
+    def, _ := strconv.Atoi(row[fileCSV.Structure.DEF])
+    card = Card{
+      ID:        key,
+      Name:      row[fileCSV.Structure.Name],
+      Type:      row[fileCSV.Structure.Type],
+      Level:     level,
+      Race:      row[fileCSV.Structure.Race],
+      Attribute: row[fileCSV.Structure.Attribute],
+      ATK:       atk,
+      DEF:       def}
+  } else {
+    err = ErrLineNotValid
+  }
+  return
+}
 
 func (f *FileCSV) FindAllCards(cards *[]Card, ) (err error) {
   err = f.mapCSVFile()
@@ -262,6 +279,64 @@ func (f *FileCSV) RandCard() (card Card, err error) {
   if _, ok := f.MapCSVData[rand.Intn(len(f.MapCSVData))]; ok {
     card = f.MapCSVData[rand.Intn(len(f.MapCSVData))]
   }
+
+  return
+}
+
+func (f *FileCSV) concurrencyReadQuery(typeQuery string, items int, workers int) (cards []Card, err error) {
+  cardChan := make(chan Card, items)
+  shutdown := make(chan struct{})
+  maxWorker := runtime.GOMAXPROCS(0)
+  if workers > maxWorker {
+    err = ErrMaxWorkers
+    return
+  }
+
+  var wg sync.WaitGroup
+  wg.Add(workers)
+
+  contentBytes, err := ioutil.ReadFile(fileCSV.Name)
+  if err != nil {
+    return
+  }
+  lines := strings.Split(string(contentBytes), "\n")
+  numLines := len(lines)
+
+  itemsPerWorker := (numLines / workers) + 1
+
+  for i := 0; i < workers; i++ {
+    go func(numWorker int) {
+      for j := 0; j < itemsPerWorker; j++ {
+        globalIndex := j + numWorker*itemsPerWorker
+        if globalIndex > numLines {
+          break
+        }
+        card, errLine := f.CardFromLineCSV(lines[globalIndex])
+        if errLine != nil {
+          continue
+        }
+        if !((card.ID%2 == 0 && typeQuery == "odd") || (card.ID%2 != 0 && typeQuery == "even")) {
+          continue
+        }
+
+        select {
+        case cardChan <- card:
+
+        case <-shutdown:
+          wg.Done()
+          return
+        }
+      }
+    }(i)
+  }
+
+  for i := 0; i < items; i++ {
+    c := <-cardChan
+    cards = append(cards, c)
+  }
+
+  close(shutdown)
+  wg.Wait()
 
   return
 }
